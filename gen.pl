@@ -25,7 +25,7 @@ my @items=<IN>;
 close(IN);
 
 foreach $_ (@items) {
-    m/^(.*),(.*),(.*)$/ || die "Bad line: $_";
+    m/^(.*),(.*),(.*)$/ || m/^(.*),(.*)$/ ||  die "Bad line: $_";
     my $name = $1;
     my $ean13 = $2;
     $name =~ s/[^\w]/_/g;
