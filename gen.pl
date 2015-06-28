@@ -59,6 +59,46 @@ sub clearScreen {
   print "\033[0;0H";
 }
 
+# Validates provided EAN13
+# http://www.hashbangcode.com/blog/validate-ean13-barcodes
+sub validateEan13 {
+    my ($ean13) = @_;
+    my $ean13 = $ean13;
+    my $originalcheck = 0;
+    if (length($ean13) == 13) {
+        $originalcheck = substr($ean13, -1);
+        $ean13 = substr($ean13, 0, -1);
+    } elsif (length($ean13) != 12) {
+        # Invalid EAN13 barcode
+        return 0;
+    }
+
+    # Add even numbers together
+    my $even = substr($ean13, 1, 1) + substr($ean13, 3, 1) + substr($ean13, 5, 1) + substr($ean13, 7, 1) + substr($ean13, 9, 1) + substr($ean13, 11, 1);
+    # Multiply this result by 3
+    $even = $even * 3;
+
+    # Add odd numbers together
+    my $odd = substr($ean13, 0, 1) + substr($ean13, 2, 1) + substr($ean13, 4, 1) + substr($ean13, 6, 1) + substr($ean13, 8, 1) + substr($ean13, 10, 1);
+
+    # Add two totals together
+    my $total = $even + $odd;
+
+    # Calculate the checksum
+    # Divide total by 10 and store the remainder
+    my $checksum = $total % 10;
+    # If result is not 0 then take away 10
+    if ($checksum != 0) {
+      $checksum = 10 - $checksum;
+    }
+
+    if ($originalcheck == $checksum) {
+      return 1;
+    } else {
+      return 0;
+    }
+}
+
 # Main function
 sub init {
   initTemplate();
@@ -74,8 +114,21 @@ sub init {
     print "Manually enter EAN13\n";
     print "Enter filename:";
     chomp(my $name = <>);
-    print "Enter EAN13 number:";
-    chomp(my $ean13 = <>);
+
+    my $ean13;
+    my $ean13check = 0;
+
+    # Validates EAN13, if invalid ask to re-enter
+    do {
+      print "Enter EAN13 number:";
+      chomp($ean13 = <>);
+
+      $ean13check = validateEan13($ean13);
+      if (!$ean13check) {
+        print "$ean13 is invalid, please try again.\n";
+      }
+    } while (!$ean13check);
+
     generateBarcode($name , $ean13, $prefix, $suffix, $width, $height, $directory);
 
   } elsif ($option == 2) {
@@ -88,7 +141,14 @@ sub init {
 
     foreach $_ (@items) {
         m/^(.*),(.*),(.*)$/ || m/^(.*),(.*)$/ ||  die "Bad line: $_";
-        generateBarcode($1, $2, $prefix, $suffix, $width, $height, $directory);
+
+        my $ean13check = validateEan13($2);
+
+        if (!$ean13check) {
+          print "$2($1) is invalid, please check EAN13.\n";
+        } else {
+          generateBarcode($1, $2, $prefix, $suffix, $width, $height, $directory);
+        }
     }
     print "Complete\n";
   } elsif ($option == 0 || $option == "") {
