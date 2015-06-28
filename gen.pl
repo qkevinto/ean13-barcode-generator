@@ -66,11 +66,11 @@ sub validateEan13 {
     my $ean13 = $ean13;
     my $originalcheck = 0;
     if (length($ean13) == 13) {
-        $originalcheck = substr($ean13, -1);
-        $ean13 = substr($ean13, 0, -1);
+      $originalcheck = substr($ean13, -1);
+      $ean13 = substr($ean13, 0, -1);
     } elsif (length($ean13) != 12) {
-        # Invalid EAN13 barcode
-        return 0;
+      # Invalid EAN13 barcode
+      return 0;
     }
 
     # Add even numbers together
@@ -140,15 +140,15 @@ sub init {
     close(IN);
 
     foreach $_ (@items) {
-        m/^(.*),(.*),(.*)$/ || m/^(.*),(.*)$/ ||  die "Bad line: $_";
+      m/^(.*),(.*),(.*)$/ || m/^(.*),(.*)$/ ||  die "Bad line: $_";
 
-        my $ean13check = validateEan13($2);
+      my $ean13check = validateEan13($2);
 
-        if (!$ean13check) {
-          print "$2($1) is invalid, please check EAN13.\n";
-        } else {
-          generateBarcode($1, $2, $prefix, $suffix, $width, $height, $directory);
-        }
+      if (!$ean13check) {
+        print "$2($1) is invalid, please check EAN13.\n";
+      } else {
+        generateBarcode($1, $2, $prefix, $suffix, $width, $height, $directory);
+      }
     }
     print "Complete\n";
   } elsif ($option == 0 || $option == "") {
