@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
+use warnings;
 
 my $template;
 my $prefix = "";
@@ -38,11 +39,7 @@ sub generateBarcode {
   chomp($ean13);
   $ean13 =~ s/^\s*(.*?)\s*$/$1/; #trims whitespace
   $name =~ s/[^\w]/_/g; #replaces all characters except letters with underscore
-  my $prefix = $prefix;
-  my $suffix = $suffix;
   my $filename = lc("$prefix$name$suffix.$fileformat");
-  my $width = $width;
-  my $height = $height;
   my $contents = "($ean13) (includetext guardwhitespace) /ean13 /uk.co.terryburton.bwipp findresource exec";
   my $barcode = $template;
   $barcode =~ s/\[% call %\]/$contents/;
