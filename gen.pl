@@ -101,7 +101,6 @@ sub validateEan13 {
 
 # Main function
 sub init {
-  initTemplate();
   clearScreen();
   print "EAN13 Barcode Generator\n";
   print "==============================================\n";
@@ -145,7 +144,9 @@ sub init {
     print "$ean13($filename) barcode successfully generated to ./$directory directory.\n";
     print "\n";
 
-    exit 42;
+    print "Press <enter> or <return> to continue:";
+    my $response = <>;
+    init();
   } elsif ($option == 2) {
     clearScreen();
     open(IN,"input.csv");
@@ -188,15 +189,19 @@ sub init {
     print "$successCount barcodes successfully generated to ./$directory directory.\n";
     print "\n";
 
-    exit 42;
-  } elsif ($option == 0 || $option == "") {
+    print "Press <enter> or <return> to continue:";
+    my $response = <>;
+    init();
+  } else {
     clearScreen();
     print "EAN13 Barcode Generator\n";
     print "==============================================\n";
     print "\n";
     print "Exit\n";
+    print "\n";
     exit 42;
   }
 }
 
+initTemplate();
 init();
