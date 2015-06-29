@@ -106,7 +106,7 @@ sub init {
   print "EAN13 Barcode Generator\n";
   print "==============================================\n";
   print "Options:\n";
-  print "[1] Manually enter EAN13\n[2] Batch generate EAN13 barcodes from input.csv\n[0] Exit\n";
+  print "[1] Manual entry\n[2] Batch generate from input.csv\n[0] Exit\n";
   print "Please choose your option [1,2,0]:";
   my $option = <>;
 
@@ -115,7 +115,7 @@ sub init {
 
     print "EAN13 Barcode Generator\n";
     print "==============================================\n";
-    print "Manually enter EAN13\n";
+    print "Manual entry\n";
     print "\n";
     print "Enter filename:";
 
