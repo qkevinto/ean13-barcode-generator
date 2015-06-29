@@ -9,7 +9,7 @@ my $suffix = "_barcode";
 my $width = "232";
 my $height = "153";
 my $directory = "barcodes";
-my $fileformat = "eps";
+my $fileFormat = "eps";
 
 # Initialises the main barcode template
 sub initTemplate {
@@ -39,7 +39,7 @@ sub generateBarcode {
   chomp($ean13);
   $ean13 =~ s/^\s*(.*?)\s*$/$1/; #trims whitespace
   $name =~ s/[^\w]/_/g; #replaces all characters except letters with underscore
-  my $filename = lc("$prefix$name$suffix.$fileformat");
+  my $filename = lc("$prefix$name$suffix.$fileFormat");
   my $contents = "($ean13) (includetext guardwhitespace) /ean13 /uk.co.terryburton.bwipp findresource exec";
   my $barcode = $template;
   $barcode =~ s/\[% call %\]/$contents/;
@@ -60,9 +60,9 @@ sub clearScreen {
 # http://www.hashbangcode.com/blog/validate-ean13-barcodes
 sub validateEan13 {
     my ($ean13) = @_;
-    my $originalcheck = 0;
+    my $originalCheck = 0;
     if (length($ean13) == 13) {
-      $originalcheck = substr($ean13, -1);
+      $originalCheck = substr($ean13, -1);
       $ean13 = substr($ean13, 0, -1);
     } elsif (length($ean13) != 12) {
       # Invalid EAN13 barcode
@@ -88,7 +88,7 @@ sub validateEan13 {
       $checksum = 10 - $checksum;
     }
 
-    if ($originalcheck == $checksum) {
+    if ($originalCheck == $checksum) {
       return 1;
     } else {
       return 0;
@@ -117,22 +117,22 @@ sub init {
     chomp(my $name = <>);
 
     my $ean13;
-    my $ean13check = 0;
+    my $ean13Check = 0;
 
     # Validates EAN13, if invalid ask to re-enter
     do {
       print "Enter EAN13 number:";
       chomp($ean13 = <>);
 
-      $ean13check = validateEan13($ean13);
-      if (!$ean13check) {
+      $ean13Check = validateEan13($ean13);
+      if (!$ean13Check) {
         print "$ean13 is an invalid EAN13, please try again.\n";
       }
-    } while (!$ean13check);
+    } while (!$ean13Check);
 
     generateBarcode($name , $ean13, $prefix, $suffix, $width, $height, $directory);
 
-    my $filename = lc("$prefix$name$suffix.$fileformat");
+    my $filename = lc("$prefix$name$suffix.$fileFormat");
 
     print "\n";
     print "Results:\n";
@@ -161,9 +161,9 @@ sub init {
     foreach $_ (@items) {
       m/^(.*),(.*),(.*)$/ || m/^(.*),(.*)$/ ||  die "Bad line: $_";
 
-      my $ean13check = validateEan13($2);
+      my $ean13Check = validateEan13($2);
 
-      if (!$ean13check) {
+      if (!$ean13Check) {
         print "$2($1) is invalid, please check EAN13.\n";
         $errorCount ++;
       } else {
