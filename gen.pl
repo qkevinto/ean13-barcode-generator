@@ -8,6 +8,7 @@ my $suffix = "_barcode";
 my $width = "232";
 my $height = "153";
 my $directory = "barcodes";
+my $fileformat = "eps";
 
 # Initialises the main barcode template
 sub initTemplate {
@@ -39,7 +40,6 @@ sub generateBarcode {
   $name =~ s/[^\w]/_/g; #replaces all characters except letters with underscore
   my $prefix = $prefix;
   my $suffix = $suffix;
-  my $fileformat = "eps";
   my $filename = lc("$prefix$name$suffix.$fileformat");
   my $width = $width;
   my $height = $height;
@@ -104,15 +104,21 @@ sub init {
   initTemplate();
   clearScreen();
   print "EAN13 Barcode Generator\n";
+  print "==============================================\n";
+  print "Options:\n";
   print "[1] Manually enter EAN13\n[2] Batch generate EAN13 barcodes from input.csv\n[0] Exit\n";
   print "Please choose your option [1,2,0]:";
   my $option = <>;
 
   if ($option == 1) {
     clearScreen();
+
     print "EAN13 Barcode Generator\n";
+    print "==============================================\n";
     print "Manually enter EAN13\n";
+    print "\n";
     print "Enter filename:";
+
     chomp(my $name = <>);
 
     my $ean13;
@@ -125,19 +131,35 @@ sub init {
 
       $ean13check = validateEan13($ean13);
       if (!$ean13check) {
-        print "$ean13 is invalid, please try again.\n";
+        print "$ean13 is an invalid EAN13, please try again.\n";
       }
     } while (!$ean13check);
 
     generateBarcode($name , $ean13, $prefix, $suffix, $width, $height, $directory);
 
+    my $filename = lc("$prefix$name$suffix.$fileformat");
+
+    print "\n";
+    print "Results:\n";
+    print "Operation complete.\n";
+    print "$ean13($filename) barcode successfully generated to ./$directory directory.\n";
+    print "\n";
+
+    exit 42;
   } elsif ($option == 2) {
     clearScreen();
-    print "EAN13 Barcode Generator\n";
-    print "Batch generate EAN13 barcodes from input.csv\n";
     open(IN,"input.csv");
     my @items=<IN>;
     close(IN);
+
+    my $successCount = 0;
+    my $errorCount = 0;
+
+    print "EAN13 Barcode Generator\n";
+    print "==============================================\n";
+    print "Batch generating EAN13 barcodes from input.csv\n";
+    print "\n";
+    print "Log:\n";
 
     foreach $_ (@items) {
       m/^(.*),(.*),(.*)$/ || m/^(.*),(.*)$/ ||  die "Bad line: $_";
@@ -146,14 +168,32 @@ sub init {
 
       if (!$ean13check) {
         print "$2($1) is invalid, please check EAN13.\n";
+        $errorCount ++;
       } else {
         generateBarcode($1, $2, $prefix, $suffix, $width, $height, $directory);
+        $successCount ++;
       }
     }
-    print "Complete\n";
+
+    print "\n";
+    print "Results:\n";
+    print "Operation complete";
+
+    if ($errorCount > 0) {
+      print " with $errorCount error(s), please see logs above.\n";
+    } else {
+      print ".\n";
+    }
+
+    print "$successCount barcodes successfully generated to ./$directory directory.\n";
+    print "\n";
+
+    exit 42;
   } elsif ($option == 0 || $option == "") {
     clearScreen();
     print "EAN13 Barcode Generator\n";
+    print "==============================================\n";
+    print "\n";
     print "Exit\n";
     exit 42;
   }
