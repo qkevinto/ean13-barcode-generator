@@ -34,8 +34,8 @@ sub initTemplate {
 # Generates EAN13 barcode
 sub generateBarcode {
   my ($name, $ean13, $prefix, $suffix, $width, $height, $directory) = @_;
-  chomp(my $name = $name);
-  chomp(my $ean13 = $ean13);
+  chomp($name);
+  chomp($ean13);
   $ean13 =~ s/^\s*(.*?)\s*$/$1/; #trims whitespace
   $name =~ s/[^\w]/_/g; #replaces all characters except letters with underscore
   my $prefix = $prefix;
@@ -63,7 +63,6 @@ sub clearScreen {
 # http://www.hashbangcode.com/blog/validate-ean13-barcodes
 sub validateEan13 {
     my ($ean13) = @_;
-    my $ean13 = $ean13;
     my $originalcheck = 0;
     if (length($ean13) == 13) {
       $originalcheck = substr($ean13, -1);
