@@ -145,8 +145,8 @@ sub init {
     init();
   } elsif ($option == 2) {
     clearScreen();
-    open(IN,"input.csv");
     my @items=<IN>;
+    open(IN,'<:raw:eol(LF)',"input.csv");
     close(IN);
 
     my $successCount = 0;
