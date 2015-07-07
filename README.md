@@ -1,5 +1,9 @@
 # EAN13 Barcode Generator
 
+## Note
+
+This is the first Perl thing I've ever written, and done so rather quickly to have the tool at a usable state, so if there is anything weird let me know or feel free to PR a fix!
+
 ## Requirements
 
 * [PerlIO::eol](http://search.cpan.org/~audreyt/PerlIO-eol-0.14/eol.pm) for normalizing line endings, though this seems to be included with Perl already.
