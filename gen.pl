@@ -13,62 +13,63 @@ my $fileFormat = "eps";
 
 # Initialises the main barcode template
 sub initTemplate {
-  open(PS,'barcode.ps') || die 'File not found';
-  $_ = join('',<PS>);
-  close(PS);
-  m/
-      %\ --BEGIN\ TEMPLATE--
-      (.*)
-      %\ --END\ TEMPLATE--
-      /sx || die 'Unable to parse out the template';
-  $template = '';
-  $template .= "%!PS-Adobe-2.0 EPSF-2.0\n";
-  $template .= "%%BoundingBox: 0 0 [% width %] [% height %]\n";
-  $template .= "%%EndComments";
-  $template .= $1;
-  $template .= "2 2 scale\n";
-  $template .= "10 7 moveto\n";
-  $template .= "[% call %]\n";
-  $template .= "showpage\n";
+    open(PS,'barcode.ps') || die 'File not found';
+    $_ = join('',<PS>);
+    close(PS);
+    m/
+    %\ --BEGIN\ TEMPLATE--
+    (.*)
+    %\ --END\ TEMPLATE--
+    /sx || die 'Unable to parse out the template';
+    $template = '';
+    $template .= "%!PS-Adobe-2.0 EPSF-2.0\n";
+    $template .= "%%BoundingBox: 0 0 [% width %] [% height %]\n";
+    $template .= "%%EndComments";
+    $template .= $1;
+    $template .= "2 2 scale\n";
+    $template .= "10 7 moveto\n";
+    $template .= "[% call %]\n";
+    $template .= "showpage\n";
 }
 
 # Generates barcode
 sub generateBarcode {
-  my ($name, $data, $type , $prefix, $suffix, $width, $height, $directory) = @_;
-  chomp($name);
-  chomp($data);
-  $data =~ s/^\s*(.*?)\s*$/$1/; #trims whitespace
-  $name =~ s/[^\w]/_/g; #replaces all characters except letters with underscore
-  my $filename = lc("$prefix$name$suffix.$fileFormat");
-  my $contents = "($data) (includetext guardwhitespace) /$type /uk.co.terryburton.bwipp findresource exec";
-  my $barcode = $template;
-  $barcode =~ s/\[% call %\]/$contents/;
-  $barcode =~ s/\[% width %\]/$width/;
-  $barcode =~ s/\[% height %\]/$height/;
-  open(OUT,">", "$directory/$filename");
-  print OUT $barcode;
-  close(OUT);
+    my ($name, $data, $type , $prefix, $suffix, $width, $height, $directory) = @_;
+    chomp($name);
+    chomp($data);
+    $data =~ s/^\s*(.*?)\s*$/$1/; #trims whitespace
+    $name =~ s/[^\w]/_/g; #replaces all characters except letters with underscore
+    my $filename = lc("$prefix$name$suffix.$fileFormat");
+    my $contents = "($data) (includetext guardwhitespace) /$type /uk.co.terryburton.bwipp findresource exec";
+    my $barcode = $template;
+    $barcode =~ s/\[% call %\]/$contents/;
+    $barcode =~ s/\[% width %\]/$width/;
+    $barcode =~ s/\[% height %\]/$height/;
+    open(OUT,">", "$directory/$filename");
+    print OUT $barcode;
+    close(OUT);
 }
 
 # Clears the screen
 sub clearScreen {
-  print "\033[2J";
-  print "\033[0;0H";
+    print "\033[2J";
+    print "\033[0;0H";
 }
 
-# Validates provided EAN13
-# http://www.hashbangcode.com/blog/validate-ean13-barcodes
 sub validate {
     my ($type, $data) = @_;
 
+    # Validates provided EAN13
+    # http://www.hashbangcode.com/blog/validate-ean13-barcodes
     if ($type eq "ean13") {
         my $originalCheck = 0;
+
         if (length($data) == 13) {
-          $originalCheck = substr($data, -1);
-          $data = substr($data, 0, -1);
+            $originalCheck = substr($data, -1);
+            $data = substr($data, 0, -1);
         } elsif (length($data) != 12) {
-          # Invalid EAN13 barcode
-          return 0;
+            # Invalid EAN13 barcode
+            return 0;
         }
 
         # Add even numbers together
@@ -87,13 +88,13 @@ sub validate {
         my $checksum = $total % 10;
         # If result is not 0 then take away 10
         if ($checksum != 0) {
-          $checksum = 10 - $checksum;
+            $checksum = 10 - $checksum;
         }
 
         if ($originalCheck == $checksum) {
-          return 1;
+            return 1;
         } else {
-          return 0;
+            return 0;
         }
     } else {
         return 1;
@@ -102,123 +103,123 @@ sub validate {
 
 # Main function
 sub init {
-  clearScreen();
-  print "Barcode Generator\n";
-  print "==============================================\n";
-  print "Options:\n";
-  print "[1] Manual entry\n[2] Batch generate from input.csv\n[0] Exit\n";
-  print "Please choose your option [1,2,0]:";
-  my $option = <>;
-
-  if ($option == 1) {
     clearScreen();
-
     print "Barcode Generator\n";
     print "==============================================\n";
-    print "Manual entry\n";
-    print "\n";
-    print "Enter filename:";
+    print "Options:\n";
+    print "[1] Manual entry\n[2] Batch generate from input.csv\n[0] Exit\n";
+    print "Please choose your option [1,2,0]:";
+    my $option = <>;
 
-    chomp(my $name = <>);
+    if ($option == 1) {
+        clearScreen();
 
-    print "See supported barcode types here:";
-    print "\n";
-    print "https://github.com/bwipp/postscriptbarcode/wiki/Symbologies-Reference";
-    print "\n";
-    print "Enter barcode type:";
+        print "Barcode Generator\n";
+        print "==============================================\n";
+        print "Manual entry\n";
+        print "\n";
+        print "Enter filename:";
 
-    chomp(my $type = <>);
+        chomp(my $name = <>);
 
-    my $data;
-    my $validation = 0;
+        print "See supported barcode types here:";
+        print "\n";
+        print "https://github.com/bwipp/postscriptbarcode/wiki/Symbologies-Reference";
+        print "\n";
+        print "Enter barcode type:";
 
-    # Validates EAN13, if invalid ask to re-enter
-    do {
-      print "Enter barcode data:";
-      chomp($data = <>);
+        chomp(my $type = <>);
 
-      $validation = validate($type, $data);
+        my $data;
+        my $validation = 0;
 
-      if (!$validation) {
-          print "$data is an invalid $type data, please try again.\n";
-      }
-  } while (!$validation);
+        # Validates data, if invalid ask to re-enter
+        do {
+            print "Enter barcode data:";
+            chomp($data = <>);
 
-    generateBarcode($name , $data, $type , $prefix, $suffix, $width, $height, $directory);
+            $validation = validate($type, $data);
 
-    my $filename = lc("$prefix$name$suffix.$fileFormat");
+            if (!$validation) {
+                print "$data is an invalid $type data, please try again.\n";
+            }
+        } while (!$validation);
 
-    print "\n";
-    print "Results:\n";
-    print "Operation complete.\n";
-    print "$data($filename) barcode successfully generated to ./$directory directory.\n";
-    print "\n";
+        generateBarcode($name , $data, $type , $prefix, $suffix, $width, $height, $directory);
 
-    print "Press <enter> or <return> to continue:";
-    my $response = <>;
-    init();
-  } elsif ($option == 2) {
-    clearScreen();
-    open(IN,'<:raw:eol(LF)',"input.csv");
-    my @items = <IN>;
-    close(IN);
+        my $filename = lc("$prefix$name$suffix.$fileFormat");
 
-    my $successCount = 0;
-    my $errorCount = 0;
+        print "\n";
+        print "Results:\n";
+        print "Operation complete.\n";
+        print "$data($filename) barcode successfully generated to ./$directory directory.\n";
+        print "\n";
 
-    print "Barcode Generator\n";
-    print "==============================================\n";
-    print "See supported barcode types here:";
-    print "\n";
-    print "https://github.com/bwipp/postscriptbarcode/wiki/Symbologies-Reference";
-    print "\n";
-    print "Enter barcode type:";
+        print "Press <enter> or <return> to continue:";
+        my $response = <>;
+        init();
+    } elsif ($option == 2) {
+        clearScreen();
+        open(IN,'<:raw:eol(LF)',"input.csv");
+        my @items = <IN>;
+        close(IN);
 
-    chomp(my $type = <>);
+        my $successCount = 0;
+        my $errorCount = 0;
 
-    print "Batch generating barcodes from input.csv\n";
-    print "\n";
-    print "Log:\n";
+        print "Barcode Generator\n";
+        print "==============================================\n";
+        print "See supported barcode types here:";
+        print "\n";
+        print "https://github.com/bwipp/postscriptbarcode/wiki/Symbologies-Reference";
+        print "\n";
+        print "Enter barcode type:";
 
-    foreach $_ (@items) {
-      m/^(.*),(.*),(.*)$/ || m/^(.*),(.*)$/ ||  die "Bad line: $_";
+        chomp(my $type = <>);
 
-      my $validation = validate($type, $2);
+        print "Batch generating barcodes from input.csv\n";
+        print "\n";
+        print "Log:\n";
 
-      if (!$validation) {
-        print "$2($1) is invalid, please check $type data.\n";
-        $errorCount ++;
-      } else {
-        generateBarcode($1, $2, $type, $prefix, $suffix, $width, $height, $directory);
-        $successCount ++;
-      }
-    }
+        foreach $_ (@items) {
+            m/^(.*),(.*),(.*)$/ || m/^(.*),(.*)$/ ||  die "Bad line: $_";
 
-    print "\n";
-    print "Results:\n";
-    print "Operation complete";
+            my $validation = validate($type, $2);
 
-    if ($errorCount > 0) {
-      print " with $errorCount error(s), please see logs above.\n";
+            if (!$validation) {
+                print "$2($1) is invalid, please check $type data.\n";
+                $errorCount ++;
+            } else {
+                generateBarcode($1, $2, $type, $prefix, $suffix, $width, $height, $directory);
+                $successCount ++;
+            }
+        }
+
+        print "\n";
+        print "Results:\n";
+        print "Operation complete";
+
+        if ($errorCount > 0) {
+            print " with $errorCount error(s), please see logs above.\n";
+        } else {
+            print ".\n";
+        }
+
+        print "$successCount barcodes successfully generated to ./$directory directory.\n";
+        print "\n";
+
+        print "Press <enter> or <return> to continue:";
+        my $response = <>;
+        init();
     } else {
-      print ".\n";
+        clearScreen();
+        print "Barcode Generator\n";
+        print "==============================================\n";
+        print "\n";
+        print "Exit\n";
+        print "\n";
+        exit 42;
     }
-
-    print "$successCount barcodes successfully generated to ./$directory directory.\n";
-    print "\n";
-
-    print "Press <enter> or <return> to continue:";
-    my $response = <>;
-    init();
-  } else {
-    clearScreen();
-    print "Barcode Generator\n";
-    print "==============================================\n";
-    print "\n";
-    print "Exit\n";
-    print "\n";
-    exit 42;
-  }
 }
 
 initTemplate();
