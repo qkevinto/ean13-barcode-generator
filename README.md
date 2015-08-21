@@ -1,4 +1,4 @@
-# EAN13 Barcode Generator
+#  Barcode Generator
 
 ## Note
 
@@ -21,4 +21,4 @@ Generate barcodes as vector `.eps` files in pure postscript from either a `.csv`
 ## Usage
 
 * Run `perl gen.pl`, `run.sh`, or `run.command` (on OSX) to get started and follow the prompts.
-* For batch operation, ensure `input.csv` file is present and formatted as `filename,EAN13` per barcode, per line.
+* For batch operation, ensure `input.csv` file is present and formatted as `filename,data` per barcode, per line.
