@@ -32,15 +32,15 @@ sub initTemplate {
   $template .= "showpage\n";
 }
 
-# Generates EAN13 barcode
+# Generates barcode
 sub generateBarcode {
-  my ($name, $ean13, $prefix, $suffix, $width, $height, $directory) = @_;
+  my ($name, $data, $type , $prefix, $suffix, $width, $height, $directory) = @_;
   chomp($name);
-  chomp($ean13);
-  $ean13 =~ s/^\s*(.*?)\s*$/$1/; #trims whitespace
+  chomp($data);
+  $data =~ s/^\s*(.*?)\s*$/$1/; #trims whitespace
   $name =~ s/[^\w]/_/g; #replaces all characters except letters with underscore
   my $filename = lc("$prefix$name$suffix.$fileFormat");
-  my $contents = "($ean13) (includetext guardwhitespace) /ean13 /uk.co.terryburton.bwipp findresource exec";
+  my $contents = "($data) (includetext guardwhitespace) /$type /uk.co.terryburton.bwipp findresource exec";
   my $barcode = $template;
   $barcode =~ s/\[% call %\]/$contents/;
   $barcode =~ s/\[% width %\]/$width/;
@@ -58,47 +58,52 @@ sub clearScreen {
 
 # Validates provided EAN13
 # http://www.hashbangcode.com/blog/validate-ean13-barcodes
-sub validateEan13 {
-    my ($ean13) = @_;
-    my $originalCheck = 0;
-    if (length($ean13) == 13) {
-      $originalCheck = substr($ean13, -1);
-      $ean13 = substr($ean13, 0, -1);
-    } elsif (length($ean13) != 12) {
-      # Invalid EAN13 barcode
-      return 0;
-    }
+sub validate {
+    my ($type, $data) = @_;
 
-    # Add even numbers together
-    my $even = substr($ean13, 1, 1) + substr($ean13, 3, 1) + substr($ean13, 5, 1) + substr($ean13, 7, 1) + substr($ean13, 9, 1) + substr($ean13, 11, 1);
-    # Multiply this result by 3
-    $even = $even * 3;
+    if ($type eq "ean13") {
+        my $originalCheck = 0;
+        if (length($data) == 13) {
+          $originalCheck = substr($data, -1);
+          $data = substr($data, 0, -1);
+        } elsif (length($data) != 12) {
+          # Invalid EAN13 barcode
+          return 0;
+        }
 
-    # Add odd numbers together
-    my $odd = substr($ean13, 0, 1) + substr($ean13, 2, 1) + substr($ean13, 4, 1) + substr($ean13, 6, 1) + substr($ean13, 8, 1) + substr($ean13, 10, 1);
+        # Add even numbers together
+        my $even = substr($data, 1, 1) + substr($data, 3, 1) + substr($data, 5, 1) + substr($data, 7, 1) + substr($data, 9, 1) + substr($data, 11, 1);
+        # Multiply this result by 3
+        $even = $even * 3;
 
-    # Add two totals together
-    my $total = $even + $odd;
+        # Add odd numbers together
+        my $odd = substr($data, 0, 1) + substr($data, 2, 1) + substr($data, 4, 1) + substr($data, 6, 1) + substr($data, 8, 1) + substr($data, 10, 1);
 
-    # Calculate the checksum
-    # Divide total by 10 and store the remainder
-    my $checksum = $total % 10;
-    # If result is not 0 then take away 10
-    if ($checksum != 0) {
-      $checksum = 10 - $checksum;
-    }
+        # Add two totals together
+        my $total = $even + $odd;
 
-    if ($originalCheck == $checksum) {
-      return 1;
+        # Calculate the checksum
+        # Divide total by 10 and store the remainder
+        my $checksum = $total % 10;
+        # If result is not 0 then take away 10
+        if ($checksum != 0) {
+          $checksum = 10 - $checksum;
+        }
+
+        if ($originalCheck == $checksum) {
+          return 1;
+        } else {
+          return 0;
+        }
     } else {
-      return 0;
+        return 1;
     }
 }
 
 # Main function
 sub init {
   clearScreen();
-  print "EAN13 Barcode Generator\n";
+  print "Barcode Generator\n";
   print "==============================================\n";
   print "Options:\n";
   print "[1] Manual entry\n[2] Batch generate from input.csv\n[0] Exit\n";
@@ -108,7 +113,7 @@ sub init {
   if ($option == 1) {
     clearScreen();
 
-    print "EAN13 Barcode Generator\n";
+    print "Barcode Generator\n";
     print "==============================================\n";
     print "Manual entry\n";
     print "\n";
@@ -116,28 +121,37 @@ sub init {
 
     chomp(my $name = <>);
 
-    my $ean13;
-    my $ean13Check = 0;
+    print "See supported barcode types here:";
+    print "\n";
+    print "https://github.com/bwipp/postscriptbarcode/wiki/Symbologies-Reference";
+    print "\n";
+    print "Enter barcode type:";
+
+    chomp(my $type = <>);
+
+    my $data;
+    my $validation = 0;
 
     # Validates EAN13, if invalid ask to re-enter
     do {
-      print "Enter EAN13 number:";
-      chomp($ean13 = <>);
+      print "Enter barcode data:";
+      chomp($data = <>);
 
-      $ean13Check = validateEan13($ean13);
-      if (!$ean13Check) {
-        print "$ean13 is an invalid EAN13, please try again.\n";
+      $validation = validate($type, $data);
+
+      if (!$validation) {
+          print "$data is an invalid $type data, please try again.\n";
       }
-    } while (!$ean13Check);
+  } while (!$validation);
 
-    generateBarcode($name , $ean13, $prefix, $suffix, $width, $height, $directory);
+    generateBarcode($name , $data, $type , $prefix, $suffix, $width, $height, $directory);
 
     my $filename = lc("$prefix$name$suffix.$fileFormat");
 
     print "\n";
     print "Results:\n";
     print "Operation complete.\n";
-    print "$ean13($filename) barcode successfully generated to ./$directory directory.\n";
+    print "$data($filename) barcode successfully generated to ./$directory directory.\n";
     print "\n";
 
     print "Press <enter> or <return> to continue:";
@@ -152,22 +166,30 @@ sub init {
     my $successCount = 0;
     my $errorCount = 0;
 
-    print "EAN13 Barcode Generator\n";
+    print "Barcode Generator\n";
     print "==============================================\n";
-    print "Batch generating EAN13 barcodes from input.csv\n";
+    print "See supported barcode types here:";
+    print "\n";
+    print "https://github.com/bwipp/postscriptbarcode/wiki/Symbologies-Reference";
+    print "\n";
+    print "Enter barcode type:";
+
+    chomp(my $type = <>);
+
+    print "Batch generating barcodes from input.csv\n";
     print "\n";
     print "Log:\n";
 
     foreach $_ (@items) {
       m/^(.*),(.*),(.*)$/ || m/^(.*),(.*)$/ ||  die "Bad line: $_";
 
-      my $ean13Check = validateEan13($2);
+      my $validation = validate($type, $2);
 
-      if (!$ean13Check) {
-        print "$2($1) is invalid, please check EAN13.\n";
+      if (!$validation) {
+        print "$2($1) is invalid, please check $type data.\n";
         $errorCount ++;
       } else {
-        generateBarcode($1, $2, $prefix, $suffix, $width, $height, $directory);
+        generateBarcode($1, $2, $type, $prefix, $suffix, $width, $height, $directory);
         $successCount ++;
       }
     }
@@ -190,7 +212,7 @@ sub init {
     init();
   } else {
     clearScreen();
-    print "EAN13 Barcode Generator\n";
+    print "Barcode Generator\n";
     print "==============================================\n";
     print "\n";
     print "Exit\n";
