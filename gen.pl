@@ -3,6 +3,14 @@
 use strict;
 use warnings;
 
+use PerlIO::eol;
+use Config::JSON;
+
+my $config = Config::JSON->new("config.json");
+
+my $symbologies = $config->get("symbologies");
+print $symbologies->[0]{"name"};
+
 my $template;
 my $prefix = "";
 my $suffix = "_barcode";
