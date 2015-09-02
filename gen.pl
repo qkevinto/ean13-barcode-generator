@@ -3,21 +3,37 @@
 use strict;
 use warnings;
 
-use PerlIO::eol;
-use Config::JSON;
-
-my $config = Config::JSON->new("config.json");
-
-my $symbologies = $config->get("symbologies");
-print $symbologies->[0]{"name"};
-
 my $template;
 my $prefix = "";
 my $suffix = "_barcode";
-my $width = "232";
-my $height = "153";
 my $directory = "barcodes";
 my $fileFormat = "eps";
+
+# Get the barcode type attributes
+sub getTypeAttributes {
+    my ($type) = @_;
+    my %attributes;
+
+    if ($type eq "ean13") {
+        $attributes{"width"} = "232";
+        $attributes{"height"} = "153";
+        $attributes{"scaleX"} = "2";
+        $attributes{"scaleY"} = "2";
+        $attributes{"movetoX"} = "10";
+        $attributes{"movetoY"} = "7";
+    } elsif ($type eq "itf14") {
+        $attributes{"width"} = "342";
+        $attributes{"height"} = "102";
+        $attributes{"scaleX"} = "2";
+        $attributes{"scaleY"} = "2";
+        $attributes{"movetoX"} = "18";
+        $attributes{"movetoY"} = "11";
+    } else {
+        %attributes;
+    }
+
+    return %attributes;
+}
 
 # Initialises the main barcode template
 sub initTemplate {
@@ -34,15 +50,15 @@ sub initTemplate {
     $template .= "%%BoundingBox: 0 0 [% width %] [% height %]\n";
     $template .= "%%EndComments";
     $template .= $1;
-    $template .= "2 2 scale\n";
-    $template .= "10 7 moveto\n";
+    $template .= "[% scaleX %] [% scaleY %] scale\n";
+    $template .= "[% movetoX %] [% movetoY %] moveto\n";
     $template .= "[% call %]\n";
     $template .= "showpage\n";
 }
 
 # Generates barcode
 sub generateBarcode {
-    my ($name, $data, $type , $prefix, $suffix, $width, $height, $directory) = @_;
+    my ($name, $data, $type , $prefix, $suffix, $width, $height, $scaleX , $scaleY, $movetoX, $movetoY, $directory) = @_;
     chomp($name);
     chomp($data);
     $data =~ s/^\s*(.*?)\s*$/$1/; #trims whitespace
@@ -53,6 +69,10 @@ sub generateBarcode {
     $barcode =~ s/\[% call %\]/$contents/;
     $barcode =~ s/\[% width %\]/$width/;
     $barcode =~ s/\[% height %\]/$height/;
+    $barcode =~ s/\[% scaleX %\]/$scaleX/;
+    $barcode =~ s/\[% scaleY %\]/$scaleY/;
+    $barcode =~ s/\[% movetoX %\]/$movetoX/;
+    $barcode =~ s/\[% movetoY %\]/$movetoY/;
     open(OUT,">", "$directory/$filename");
     print OUT $barcode;
     close(OUT);
@@ -120,6 +140,14 @@ sub init {
     my $option = <>;
 
     if ($option == 1) {
+        my $name;
+        my $data;
+        my $type;
+        my %attributes;
+        my $validation;
+        my $filename;
+        my $response;
+
         clearScreen();
 
         print "Barcode Generator\n";
@@ -128,18 +156,20 @@ sub init {
         print "\n";
         print "Enter filename:";
 
-        chomp(my $name = <>);
+        chomp($name = <>);
 
-        print "See supported barcode types here:";
-        print "\n";
-        print "https://github.com/bwipp/postscriptbarcode/wiki/Symbologies-Reference";
-        print "\n";
-        print "Enter barcode type:";
+        do {
+            print "Enter barcode type [ean13, itf14]:";
+            chomp($type = <>);
 
-        chomp(my $type = <>);
+            %attributes = getTypeAttributes($type);
 
-        my $data;
-        my $validation = 0;
+            if (!%attributes) {
+                print "$type is an invalid, please try again.\n";
+            }
+        } while (!%attributes);
+
+        $validation = 0;
 
         # Validates data, if invalid ask to re-enter
         do {
@@ -153,9 +183,9 @@ sub init {
             }
         } while (!$validation);
 
-        generateBarcode($name , $data, $type , $prefix, $suffix, $width, $height, $directory);
+        generateBarcode($name , $data, $type , $prefix, $suffix, $attributes{"width"}, $attributes{"height"}, $attributes{"scaleX"} , $attributes{"scaleY"}, $attributes{"movetoX"}, $attributes{"movetoY"}, $directory);
 
-        my $filename = lc("$prefix$name$suffix.$fileFormat");
+        $filename = lc("$prefix$name$suffix.$fileFormat");
 
         print "\n";
         print "Results:\n";
@@ -164,26 +194,36 @@ sub init {
         print "\n";
 
         print "Press <enter> or <return> to continue:";
-        my $response = <>;
+        $response = <>;
         init();
     } elsif ($option == 2) {
-        clearScreen();
-        open(IN,'<:raw:eol(LF)',"input.csv");
-        my @items = <IN>;
-        close(IN);
-
+        my $type;
+        my %attributes;
+        my $validation;
+        my $filename;
+        my $response;
         my $successCount = 0;
         my $errorCount = 0;
+        my @items;
+
+        clearScreen();
+        open(IN,'<:raw:eol(LF)',"input.csv");
+        @items = <IN>;
+        close(IN);
 
         print "Barcode Generator\n";
         print "==============================================\n";
-        print "See supported barcode types here:";
-        print "\n";
-        print "https://github.com/bwipp/postscriptbarcode/wiki/Symbologies-Reference";
-        print "\n";
-        print "Enter barcode type:";
 
-        chomp(my $type = <>);
+        do {
+            print "Enter barcode type [ean13, itf14]:";
+            chomp($type = <>);
+
+            %attributes = getTypeAttributes($type);
+
+            if (!%attributes) {
+                print "$type is an invalid, please try again.\n";
+            }
+        } while (!%attributes);
 
         print "Batch generating barcodes from input.csv\n";
         print "\n";
@@ -192,13 +232,13 @@ sub init {
         foreach $_ (@items) {
             m/^(.*),(.*),(.*)$/ || m/^(.*),(.*)$/ ||  die "Bad line: $_";
 
-            my $validation = validate($type, $2);
+            $validation = validate($type, $2);
 
             if (!$validation) {
                 print "$2($1) is invalid, please check $type data.\n";
                 $errorCount ++;
             } else {
-                generateBarcode($1, $2, $type, $prefix, $suffix, $width, $height, $directory);
+                generateBarcode($1 , $2, $type , $prefix, $suffix, $attributes{"width"}, $attributes{"height"}, $attributes{"scaleX"} , $attributes{"scaleY"}, $attributes{"movetoX"}, $attributes{"movetoY"}, $directory);
                 $successCount ++;
             }
         }
@@ -217,7 +257,7 @@ sub init {
         print "\n";
 
         print "Press <enter> or <return> to continue:";
-        my $response = <>;
+        $response = <>;
         init();
     } else {
         clearScreen();
