@@ -1,4 +1,4 @@
-#  Barcode Generator
+# PostScript Barcode Generator
 
 ## Note
 
